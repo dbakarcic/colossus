@@ -1,4 +1,4 @@
-import sbt._
+import sbt.{Credentials, Path, _}
 import Keys._
 import com.lightbend.paradox.sbt.ParadoxPlugin
 import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport._
@@ -53,19 +53,14 @@ lazy val GeneralSettings = Seq[Setting[_]](
 
 lazy val publishSettings: Seq[Setting[_]] = Seq(
   publishMavenStyle := true,
-  publishTo := Some(
-    if (isSnapshot.value) {
-      Opts.resolver.sonatypeSnapshots
-    } else {
-      Opts.resolver.sonatypeStaging
-    }
-  ),
+  credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
+  publishTo := Some(Performash.publishTarget(isSnapshot.value)),
   publishArtifact in Test := false,
   pomIncludeRepository := Function.const(false),
-  useGpg := false,
-  pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toCharArray),
-  pgpSecretRing := file("secring.gpg"),
-  pgpPublicRing := file("pubring.gpg"),
+//  useGpg := false,
+//  pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toCharArray),
+//  pgpSecretRing := file("secring.gpg"),
+//  pgpPublicRing := file("pubring.gpg"),
   licenses := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0")),
   homepage := Some(url("https://github.com/tumblr/colossus")),
   scmInfo := Some(ScmInfo(url("https://github.com/tumblr/colossus"), "scm:git:git@github.com/tumblr/colossus.git")),
@@ -155,3 +150,18 @@ lazy val ColossusTestsProject = Project(
     )
   ).configs(IntegrationTest)
 
+//noinspection TypeAnnotation
+lazy val Performash = new {
+  private def repo(prefix: String)(name: String) = s"pfm-$prefix-$name" at s"http://10.1.5.12:8081/repository/$name"
+  private val proxyRepo = repo("proxy")(_)
+  private val upstreamRepo = repo("upstream")(_)
+  private val upstreamReleasesRepo = upstreamRepo("maven-releases")
+  private val upstreamSnapshotsRepo = upstreamRepo("maven-snapshots")
+  val resolvers = Seq(
+    proxyRepo("ivy-releases"),
+    proxyRepo("maven-central"),
+    upstreamReleasesRepo,
+    upstreamSnapshotsRepo
+  )
+  def publishTarget(isSnapshot: Boolean) = if (isSnapshot) upstreamSnapshotsRepo else upstreamReleasesRepo
+}
