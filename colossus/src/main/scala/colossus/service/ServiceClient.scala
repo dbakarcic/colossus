@@ -425,7 +425,11 @@ class ServiceClient[P <: Protocol](
       // the oldest sent message has expired with no response - kill the connection
       // sending the Kill message instead of disconnecting will trigger the reconnection logic
       //TODO : We can probably just fail the request but keep the item buffered and not have to kill the connection
-      worker ! Kill(id, DisconnectCause.TimedOut)
+      //worker ! Kill(id, DisconnectCause.TimedOut)
+      sentBuffer.pull() match {
+        case PullResult.Item(request) => failRequest(request, new RequestTimeoutException)
+        case other => warn(s"Error pulling from sentBuffer: $other")
+      }
     }
     //remove any pending messages that have timed out.
     pending.filterScan { pending =>

@@ -494,7 +494,7 @@ class ServiceClientSpec extends ColossusSpec with MockFactory {
 
     }*/
 
-    "shutdown the connection when an in-flight request times out" in {
+    /*"shutdown the connection when an in-flight request times out" in {
       val command                   = Command(CMD_GET, "foo")
       val (endpoint, client, probe) = newClient(requestTimeout = 10.milliseconds, connectRetry = NoRetry)
       var failed                    = true
@@ -511,7 +511,7 @@ class ServiceClientSpec extends ColossusSpec with MockFactory {
       probe.expectMsg(500.milliseconds, WorkerCommand.Kill(client.id, DisconnectCause.TimedOut))
 
       failed must equal(true)
-    }
+    }*/
 
     "kill the connection if a parse exception occurs" in {
       val (endpoint, client, probe) =
